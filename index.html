@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- Part of the APK.audio project — http://APK.audio — made by Anthony Kuzub
+     MIT Licence. Free, for everyone, for ever. Full text in LICENSE at the root. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPEAKER.LIKE.AUDIO — Loudspeaker CAD & Datasheet Builder</title>
+  <link rel="stylesheet" href="vendor/apk-contracts/apk-tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="top-bar">
+    <div class="brand">🔈 SPEAKER<span>.LIKE.AUDIO</span></div>
+    <div class="toolbar-group">
+      <label for="template-select" style="font-size:11px;color:var(--muted)">Template:</label>
+      <select id="template-select" title="Load a reference loudspeaker configuration">
+        <option value="nearfield2way">Reference 82 Nearfield (8" + 1")</option>
+        <option value="midfield3way">Mastering 310 Midfield (10" + 3" + 1")</option>
+        <option value="coaxial12">Dual Concentric 12 (12" Coaxial)</option>
+        <option value="mainHorn">Studio Main 215 Horn (Twin 15" + Horn)</option>
+        <option value="subwoofer15">Sub Reflex 15 (15" Subwoofer)</option>
+      </select>
+    </div>
+
+    <div class="toolbar-group" style="margin-left:auto">
+      <button id="export-json-btn" title="Download as .speaker.json file">💾 Save File</button>
+      <label class="btn" title="Open a saved .speaker.json file">📂 Open File<input type="file" id="import-json-file" accept=".json,application/json" style="display:none"></label>
+      <button id="copy-acoustic-btn" class="primary-btn" title="Copy Acoustic.Like.audio preset definition to clipboard">📋 Copy Preset</button>
+    </div>
+  </header>
+
+  <main class="main-workspace">
+    <section class="cad-stage">
+      <div id="baffle-mount" class="cad-baffle-container"></div>
+      <div id="visualizer-mount"></div>
+    </section>
+
+    <aside id="inspector-mount" class="datasheet-panel-root"></aside>
+  </main>
+
+  <div id="toast" class="toast-msg"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

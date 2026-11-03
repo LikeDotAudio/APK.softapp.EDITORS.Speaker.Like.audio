@@ -1,0 +1,379 @@
+/* Part of the APK.audio project — http://APK.audio — made by Anthony Kuzub
+   MIT Licence. Free, for everyone, for ever. Full text in LICENSE at the root. */
+
+:root {
+  --bg: #18181b;
+  --panel: #202024;
+  --panel-2: #27272a;
+  --line: #3f3f46;
+  --text: #f4f4f5;
+  --muted: #a1a1aa;
+  --accent: #38bdf8;
+  --accent-hover: #0284c7;
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --bad: #ef4444;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.4 system-ui, -apple-system, Segoe UI, sans-serif;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header & Toolbar */
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  z-index: 10;
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: .03em;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.brand span { color: var(--text); font-weight: 500; font-size: 12px; }
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+button, select, input, .btn {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+button:hover, select:hover, input:hover {
+  border-color: var(--accent);
+}
+
+button.primary-btn {
+  background: var(--accent);
+  color: #0f172a;
+  font-weight: 600;
+  border-color: var(--accent);
+}
+button.primary-btn:hover {
+  background: var(--accent-hover);
+  color: #ffffff;
+}
+
+/* App Main Layout: Two Panels (Left: CAD Baffle Canvas + Visualizer, Right: Datasheet Inspector) */
+.main-workspace {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.cad-stage {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: #111113;
+  overflow: hidden;
+  border-right: 1px solid var(--line);
+}
+
+.cad-baffle-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.baffle-svg {
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 220px);
+}
+
+.cad-driver {
+  cursor: grab;
+  transition: opacity 0.15s;
+}
+.cad-driver:active {
+  cursor: grabbing;
+}
+.cad-driver text {
+  font-size: 11px;
+  font-family: var(--mono);
+  pointer-events: none;
+}
+
+/* Visualizer Bottom Bar */
+.visualizer-panel {
+  height: 180px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 8px;
+  padding: 8px 12px;
+  overflow: hidden;
+}
+
+.viz-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  overflow: hidden;
+}
+
+.viz-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.viz-header .mono {
+  font-family: var(--mono);
+  color: var(--accent);
+}
+
+.bands-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.viz-polars-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex: 1;
+}
+.polar-svg {
+  width: 130px;
+  height: 130px;
+}
+
+/* Right Datasheet Panel */
+.datasheet-panel-root {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  overflow-y: auto;
+}
+
+.ds-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.ds-tab {
+  flex: 1;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  border-radius: 0;
+  padding: 8px 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ds-tab:hover {
+  color: var(--text);
+  border-color: transparent;
+}
+.ds-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.ds-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ds-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.ds-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 4px;
+}
+
+.ds-row {
+  display: flex;
+  gap: 8px;
+}
+.ds-row > label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.ds-row input, .ds-row select {
+  width: 100%;
+}
+
+.ds-stats-callout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.stat-item .label {
+  font-size: 10px;
+  color: var(--muted);
+}
+.stat-item .val {
+  font-size: 13px;
+  font-family: var(--mono);
+  color: var(--text);
+  font-weight: 600;
+}
+.stat-item .val.highlight {
+  color: var(--accent);
+}
+
+/* Driver List & Component Editor */
+.ds-driver-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ds-driver-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ds-driver-card:hover {
+  border-color: #64748b;
+}
+.ds-driver-card.selected {
+  border-color: var(--accent);
+  background: #1e293b;
+}
+
+.driver-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.driver-info {
+  flex: 1;
+  min-width: 0;
+}
+.driver-name {
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.driver-sub {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.driver-del-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  padding: 2px 6px;
+}
+.driver-del-btn:hover {
+  color: var(--bad);
+}
+
+.ds-add-driver-bar {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.ds-add-driver-bar select {
+  flex: 1;
+}
+
+/* Toast alert notification */
+.toast-msg {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0284c7;
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.toast-msg.show {
+  opacity: 1;
+}
