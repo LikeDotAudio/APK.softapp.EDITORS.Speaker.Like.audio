@@ -11,6 +11,27 @@ import { createBaffleCanvas } from './ui/baffleCanvas.js';
 import { createDatasheetPanel } from './ui/datasheetPanel.js';
 import { createVisualizer } from './ui/visualizer.js';
 
+const S = window.APKSoftapp;   // vendor/apk-softapp: help panel and problem cards (absent: the editor still works)
+if (S) S.describe({
+  name: 'Speaker.Like.audio',
+  does: 'Builds a loudspeaker: cabinet, drivers placed on the baffle (mm), and its datasheet; hands the result to Acoustic.Like.audio as a preset.',
+  inputs: [
+    { name: 'Template', from: 'the built-in reference loudspeakers in the Template list', kind: 'control' },
+    { name: 'Speaker file', from: 'a .speaker.json picked with Open File', kind: 'file' },
+  ],
+  outputs: [
+    { name: 'Speaker file', to: '<name>.speaker.json download (Save File)', kind: 'file' },
+    { name: 'Acoustic preset', to: 'the clipboard (Copy Preset), to paste into Acoustic.Like.audio', kind: 'clipboard' },
+  ],
+  controls: [
+    { name: 'Template', how: 'Pick one in the Template list (replaces the current speaker)' },
+    { name: 'Place a driver', how: 'Drag it on the baffle (snaps to the centre line within 5 mm); click to select, click empty baffle to deselect' },
+    { name: 'Cabinet / Components / Datasheet', how: 'Tabs in the right-hand panel: edit cabinet size, add / remove / edit components, fill the datasheet' },
+    { name: 'Save File / Open File / Copy Preset', how: 'Top-bar buttons' },
+  ],
+  problems: ['file_unreadable', 'bad_json', 'bad_input', 'permission_denied'],
+});
+
 let speaker = createDefaultSpeaker('nearfield2way');
 let selectedDriverId = null;
 
@@ -104,16 +125,25 @@ if (importFile) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
+    const again = () => importFile.click();
     reader.onload = (evt) => {
+      let loaded;
       try {
-        const loaded = importSpeakerJson(evt.target.result);
-        speaker = loaded;
-        selectedDriverId = null;
-        renderAll();
-        showToast(`Imported ${speaker.name}`);
+        loaded = importSpeakerJson(evt.target.result);
       } catch (err) {
-        alert('Could not parse speaker file: ' + err.message);
+        const code = err instanceof SyntaxError ? 'bad_json' : 'bad_input';
+        const fix = code === 'bad_input' ? ['Open a .speaker.json written by Save File: it has a "cabinet" and a "drivers" list.'] : [];
+        if (S) S.showProblem(code, { subject: file.name, detail: err.message, fix, onRetry: again });
+        else alert('Could not parse speaker file: ' + err.message);
+        return;
       }
+      speaker = loaded;
+      selectedDriverId = null;
+      renderAll();
+      showToast(`Imported ${speaker.name}`);
+    };
+    reader.onerror = () => {
+      if (S) S.showProblem('file_unreadable', { subject: file.name, detail: reader.error && reader.error.message, onRetry: again });
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -129,9 +159,16 @@ if (copyPresetBtn) {
     try {
       await navigator.clipboard.writeText(code);
       showToast('Copied Acoustic preset to clipboard!');
-    } catch (_) {
+    } catch (err) {
       console.log('Preset JSON:', code);
       showToast('Preset logged to console');
+      if (S) S.showProblem('permission_denied', {
+        subject: 'Clipboard',
+        detail: err && err.message,
+        fix: ['Click Copy Preset again: the browser only lets a page write the clipboard right after a click on it.',
+          'Or take the preset from the browser console (F12 → Console), where it was printed as "Preset JSON".'],
+        onRetry: () => copyPresetBtn.click(),
+      });
     }
   });
 }
