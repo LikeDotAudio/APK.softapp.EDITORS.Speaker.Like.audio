@@ -1,6 +1,6 @@
 {
   "name": "speaker-like-audio",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Speaker CAD Builder & Datasheet Editor on APK.audio",
   "type": "module",
   "scripts": {
