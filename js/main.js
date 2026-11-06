@@ -7,6 +7,7 @@ import {
   importSpeakerJson,
   SPEAKER_TEMPLATES,
 } from './model/speaker.js';
+import { speakerToIfc, speakerFromIfc, speakerStem } from './model/speakerIfc.js';
 import { createBaffleCanvas } from './ui/baffleCanvas.js';
 import { createDatasheetPanel } from './ui/datasheetPanel.js';
 import { createVisualizer } from './ui/visualizer.js';
@@ -17,10 +18,10 @@ if (S) S.describe({
   does: 'Builds a loudspeaker: cabinet, drivers placed on the baffle (mm), and its datasheet; hands the result to Acoustic.Like.audio as a preset.',
   inputs: [
     { name: 'Template', from: 'the built-in reference loudspeakers in the Template list', kind: 'control' },
-    { name: 'Speaker file', from: 'a .speaker.json picked with Open File', kind: 'file' },
+    { name: 'Speaker file', from: 'a .speaker.json or its .speaker.ifc twin (or any IFC with a loudspeaker type, e.g. a BIM part) picked with Open File', kind: 'file' },
   ],
   outputs: [
-    { name: 'Speaker file', to: '<name>.speaker.json download (Save File)', kind: 'file' },
+    { name: 'Speaker file', to: '<name>.speaker.json AND its <name>.speaker.ifc twin (Save File, Save Model): the box as an IFC4X3_ADD2 IfcAudioVisualApplianceType SPEAKER, shaped like a BIM loudspeaker part', kind: 'file' },
     { name: 'Acoustic preset', to: 'the clipboard (Copy Preset), to paste into Acoustic.Like.audio', kind: 'clipboard' },
   ],
   controls: [
@@ -29,7 +30,7 @@ if (S) S.describe({
     { name: 'Cabinet / Components / Datasheet', how: 'Tabs in the right-hand panel: edit cabinet size, add / remove / edit components, fill the datasheet' },
     { name: 'Save File / Open File / Copy Preset', how: 'Top-bar buttons' },
   ],
-  problems: ['file_unreadable', 'bad_json', 'bad_input', 'permission_denied'],
+  problems: ['file_unreadable', 'bad_json', 'bad_input', 'permission_denied', 'save_failed'],
 });
 
 let speaker = createDefaultSpeaker('nearfield2way');
@@ -104,49 +105,59 @@ if (templateSelect) {
   });
 }
 
-// Export JSON file
+// Save File: the .speaker.json AND its .speaker.ifc twin, both or neither (APKSoftapp.saveModel)
 const exportBtn = document.getElementById('export-json-btn');
-if (exportBtn) {
-  exportBtn.addEventListener('click', () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(speaker, null, 2));
+async function saveSpeaker() {
+  const stem = `${speakerStem(speaker)}.speaker`;
+  if (!S || typeof S.saveModel !== 'function') {   // no shared client: the .json alone, as before
     const a = document.createElement('a');
-    a.href = dataStr;
-    const safeName = (speaker.name || 'speaker').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
-    a.download = `${safeName}.speaker.json`;
+    a.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(speaker, null, 2));
+    a.download = `${stem}.json`;
     a.click();
     showToast('Downloaded .speaker.json file');
-  });
+    return;
+  }
+  const r = await S.saveModel(speaker, { name: stem, toIfc: (spk) => speakerToIfc(spk, { name: stem }) });
+  if (r.ok) showToast(`Saved ${r.files.join(' + ')}`);
+  else if (!r.cancelled) S.showProblem(r.problem || 'save_failed', { onRetry: saveSpeaker });
 }
+if (exportBtn) exportBtn.addEventListener('click', () => { saveSpeaker(); });
 
-// Import JSON file
+// Open File: a .speaker.json or an .ifc (its twin, or any IFC with a loudspeaker type)
 const importFile = document.getElementById('import-json-file');
+function loaded(next, name) {
+  speaker = next;
+  selectedDriverId = null;
+  renderAll();
+  showToast(`Imported ${speaker.name}${name ? ` (${name})` : ''}`);
+}
 if (importFile) {
-  importFile.addEventListener('change', (e) => {
+  importFile.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
+    e.target.value = '';
     const again = () => importFile.click();
+    if (S && typeof S.openModel === 'function') {
+      const r = await S.openModel({ file, fromIfc: (text) => speakerFromIfc(text), fromJson: (data) => importSpeakerJson(data) });
+      if (r.ok) loaded(r.model, r.name);
+      else if (!r.cancelled) S.showProblem(r.problem, {
+        fix: ['Open a .speaker.json or .speaker.ifc written by Save File: the .json has a "cabinet" and a "drivers" list, the .ifc an IfcAudioVisualApplianceType SPEAKER.'],
+        onRetry: again,
+      });
+      return;
+    }
+    const reader = new FileReader();
     reader.onload = (evt) => {
-      let loaded;
+      let next;
       try {
-        loaded = importSpeakerJson(evt.target.result);
+        next = importSpeakerJson(evt.target.result);
       } catch (err) {
-        const code = err instanceof SyntaxError ? 'bad_json' : 'bad_input';
-        const fix = code === 'bad_input' ? ['Open a .speaker.json written by Save File: it has a "cabinet" and a "drivers" list.'] : [];
-        if (S) S.showProblem(code, { subject: file.name, detail: err.message, fix, onRetry: again });
-        else alert('Could not parse speaker file: ' + err.message);
+        alert('Could not parse speaker file: ' + err.message);
         return;
       }
-      speaker = loaded;
-      selectedDriverId = null;
-      renderAll();
-      showToast(`Imported ${speaker.name}`);
-    };
-    reader.onerror = () => {
-      if (S) S.showProblem('file_unreadable', { subject: file.name, detail: reader.error && reader.error.message, onRetry: again });
+      loaded(next, file.name);
     };
     reader.readAsText(file);
-    e.target.value = '';
   });
 }
 
