@@ -42,6 +42,8 @@ function showToast(msg) {
   toast.textContent = msg;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2400);
+  // The notice's twin on the bus, for UTILITY.Log (ROAD-3695); a problem goes through S.showProblem.
+  if (S && typeof S.log === 'function') S.log('info', msg);
 }
 
 // 1. Initialize Baffle CAD Canvas
